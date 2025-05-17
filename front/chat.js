@@ -1,14 +1,8 @@
-const UserStatus = {
-  ONLINE: 'online',
-  OFFLINE: 'offline',
-};
-
 let socket;
 let currentRoom = null;
 let currentUserId = null;
 let userReactions = new Map();
-let onlineUsers = new Map();
-let selectedUserForProfile = null;
+let selectedMessageId = null;
 let currentMessageForComments = null;
 
 // DOM Elements
@@ -16,7 +10,6 @@ const appContainer = document.querySelector('.app-container');
 const userIdInput = document.getElementById('userId');
 const connectButton = document.getElementById('connectButton');
 const connectionStatus = document.getElementById('connectionStatus');
-const onlineUsersList = document.getElementById('onlineUsersList');
 const roomNameInput = document.getElementById('roomName');
 const joinRoomButton = document.getElementById('joinRoomButton');
 const currentRoomStatus = document.getElementById('currentRoomStatus');
@@ -29,12 +22,6 @@ const messagesDiv = document.getElementById('messages');
 const emojiModal = document.getElementById('emojiModal');
 const emojiList = document.getElementById('emojiList');
 const closeEmojiModal = document.getElementById('closeEmojiModal');
-const userProfileModal = document.getElementById('userProfileModal');
-const profileInitials = document.getElementById('profileInitials');
-const profileName = document.getElementById('profileName');
-const profileStatus = document.getElementById('profileStatus');
-const profileActivity = document.getElementById('profileActivity');
-const closeProfileModal = document.getElementById('closeProfileModal');
 
 // Comment Modal Elements
 const commentModal = document.getElementById('commentModal');
@@ -42,8 +29,6 @@ const commentsList = document.getElementById('commentsList');
 const commentInput = document.getElementById('commentInput');
 const submitComment = document.getElementById('submitComment');
 const closeCommentModal = document.getElementById('closeCommentModal');
-
-let selectedMessageId = null;
 
 // Helper Functions
 function formatRelativeTime(date) {
@@ -60,84 +45,6 @@ function formatRelativeTime(date) {
   if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
   const diffDays = Math.floor(diffHours / 24);
   return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-}
-
-function getInitials(name) {
-  if (!name) return '?';
-  return name
-    .split(' ')
-    .map((word) => word.charAt(0).toUpperCase())
-    .join('')
-    .substring(0, 2);
-}
-
-function capitalizeFirstLetter(string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-// Online Users List
-function updateOnlineUsersList() {
-  onlineUsersList.innerHTML = '';
-
-  if (onlineUsers.size === 0) {
-    const noUsers = document.createElement('p');
-    noUsers.textContent = 'No users online';
-    noUsers.classList.add('status');
-    noUsers.style.padding = '10px 15px';
-    onlineUsersList.appendChild(noUsers);
-    return;
-  }
-
-  const sortedUsers = Array.from(onlineUsers.values()).sort((a, b) => {
-    return a.status === UserStatus.ONLINE ? -1 : 1;
-  });
-
-  sortedUsers.forEach((user) => {
-    if (user.userId === currentUserId) return;
-
-    const userItem = document.createElement('div');
-    userItem.classList.add('user-item', `status-${user.status}`);
-    userItem.dataset.userId = user.userId;
-
-    const avatar = document.createElement('div');
-    avatar.classList.add('user-avatar');
-    avatar.textContent = getInitials(user.userId);
-
-    const userInfo = document.createElement('div');
-    userInfo.classList.add('user-info');
-
-    const userName = document.createElement('div');
-    userName.classList.add('user-name');
-    userName.textContent = user.userId;
-
-    const userStatus = document.createElement('div');
-    userStatus.classList.add('user-status');
-    userStatus.textContent = capitalizeFirstLetter(user.status);
-
-    const lastActivity = document.createElement('div');
-    lastActivity.classList.add('last-activity');
-    lastActivity.textContent = `Active: ${formatRelativeTime(user.lastActivity)}`;
-
-    userInfo.appendChild(userName);
-    userInfo.appendChild(userStatus);
-    userInfo.appendChild(lastActivity);
-
-    userItem.appendChild(avatar);
-    userItem.appendChild(userInfo);
-    userItem.addEventListener('click', () => showUserProfile(user));
-    onlineUsersList.appendChild(userItem);
-  });
-}
-
-// User Profile
-function showUserProfile(user) {
-  selectedUserForProfile = user;
-  profileInitials.textContent = getInitials(user.userId);
-  profileName.textContent = user.userId;
-  profileStatus.textContent = capitalizeFirstLetter(user.status);
-  profileStatus.className = `status-indicator status-${user.status}`;
-  profileActivity.textContent = `Last activity: ${formatRelativeTime(user.lastActivity)}`;
-  userProfileModal.style.display = 'block';
 }
 
 // Message Handling
@@ -382,7 +289,6 @@ function connect() {
 
   currentUserId = userId;
   userReactions.clear();
-  onlineUsers.clear();
 
   socket = io('http://localhost:3000', {
     query: { userId: userId },
@@ -399,9 +305,6 @@ function connect() {
   socket.on('receiveMessage', onReceiveMessage);
   socket.on('messageReaction', onMessageReaction);
   socket.on('reactionRemoved', onReactionRemoved);
-  socket.on('userPresenceUpdate', onUserPresenceUpdate);
-  socket.on('userPresenceList', onUserPresenceList);
-  socket.on('userPresenceInfo', onUserPresenceInfo);
 
   // Comment related events
   socket.on('commentAdded', (commentData) => {
@@ -421,7 +324,7 @@ function onConnect() {
   connectionStatus.textContent = 'Status: Connected';
   connectionStatus.classList.add('connected');
   addMessage('Connected to chat server', 'status');
-  appContainer.style.display = 'flex';
+  appContainer.style.display = 'block';
   userIdInput.disabled = true;
   connectButton.textContent = 'Disconnect';
   connectButton.onclick = disconnect;
@@ -465,25 +368,6 @@ function onReactionRemoved(data) {
   handleMessageReaction(data.messageId, data.userId, data.reaction, true);
 }
 
-function onUserPresenceUpdate(presenceData) {
-  onlineUsers.set(presenceData.userId, presenceData);
-  updateOnlineUsersList();
-  if (selectedUserForProfile?.userId === presenceData.userId) {
-    showUserProfile(presenceData);
-  }
-}
-
-function onUserPresenceList(userList) {
-  onlineUsers.clear();
-  userList.forEach((user) => onlineUsers.set(user.userId, user));
-  updateOnlineUsersList();
-}
-
-function onUserPresenceInfo(presenceData) {
-  onlineUsers.set(presenceData.userId, presenceData);
-  showUserProfile(presenceData);
-}
-
 function resetUI() {
   appContainer.style.display = 'none';
   messageInputContainer.style.display = 'none';
@@ -493,8 +377,6 @@ function resetUI() {
   connectButton.textContent = 'Connect';
   connectButton.onclick = connect;
   userReactions.clear();
-  onlineUsers.clear();
-  onlineUsersList.innerHTML = '';
 }
 
 function disconnect() {
@@ -518,11 +400,6 @@ function sendMessage() {
 }
 
 // Event Listeners
-closeProfileModal.addEventListener('click', () => {
-  userProfileModal.style.display = 'none';
-  selectedUserForProfile = null;
-});
-
 emojiList.addEventListener('click', (event) => {
   if (event.target.classList.contains('emoji-button') && selectedMessageId) {
     const reaction = event.target.dataset.emoji;

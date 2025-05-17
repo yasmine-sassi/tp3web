@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CHAT</title>
+    <title>Real-Time Chat</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script defer src="chat.js"></script>
@@ -11,26 +11,19 @@
   <body>
     <div class="container">
       <div class="chat-header">
-        <h2>CHAT</h2>
+        <h2>Messenger</h2>
       </div>
 
       <div class="connection-info">
         <div class="user-input">
           <label for="userId">Username :</label>
-          <input type="text" id="userId" placeholder="Enter your User ID" />
+          <input type="text" id="userId" placeholder="Enter your Username" />
           <button id="connectButton">Connect</button>
         </div>
         <p id="connectionStatus" class="status">Status: Not Connected</p>
       </div>
 
       <div class="app-container" style="display: none">
-        <div class="presence-panel">
-          <div class="presence-header">
-            <h3>Online Users</h3>
-          </div>
-          <div id="onlineUsersList" class="online-users"></div>
-        </div>
-
         <div class="chat-panel">
           <div id="roomSection" class="room-controls">
             <div class="user-input">
@@ -68,9 +61,6 @@
           <button class="emoji-button" data-emoji="😂">😂</button>
           <button class="emoji-button" data-emoji="😮">😮</button>
           <button class="emoji-button" data-emoji="😢">😢</button>
-          <button class="emoji-button" data-emoji="🔥">🔥</button>
-          <button class="emoji-button" data-emoji="👏">👏</button>
-          <button class="emoji-button" data-emoji="🎉">🎉</button>
         </div>
         <button id="closeEmojiModal">Cancel</button>
       </div>
@@ -85,31 +75,6 @@
           <button id="submitComment">Post</button>
         </div>
         <button id="closeCommentModal">Close</button>
-      </div>
-    </div>
-
-    <div id="userProfileModal" class="modal">
-      <div class="modal-content user-profile-modal">
-        <h3>User Profile</h3>
-        <div id="userProfileContent">
-          <div class="profile-header">
-            <div class="profile-avatar">
-              <span id="profileInitials">?</span>
-            </div>
-            <div class="profile-info">
-              <h4 id="profileName">Loading...</h4>
-              <p id="profileStatus" class="status-indicator">
-                Loading status...
-              </p>
-              <p id="profileActivity" class="activity-info">
-                Last activity: Unknown
-              </p>
-            </div>
-          </div>
-          <div class="profile-actions">
-            <button id="closeProfileModal">Close</button>
-          </div>
-        </div>
       </div>
     </div>
   </body>
